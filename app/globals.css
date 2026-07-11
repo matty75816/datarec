@@ -1,0 +1,18 @@
+@import "tailwindcss";
+
+@theme inline {
+  /* Configuration de tes couleurs personnalisées (Maquette Étude 2026) */
+  --color-dark-bg: #03030e;      /* Le fond bleu nuit très sombre */
+  --color-dark-card: #0b0a1d;    /* Le fond de tes encadrés */
+  --color-neon-purple: #a855f7;  /* Le violet lumineux */
+  --color-neon-pink: #ec4899;    /* Le rose fuchsia */
+  --color-neon-blue: #3b82f6;    /* Le bleu électrique */
+  --color-neon-cyan: #06b6d4;    /* Le turquoise */
+}
+
+body {
+  background-color: var(--color-dark-bg);
+  color: #ffffff;
+  font-family: system-ui, -apple-system, sans-serif;
+  overflow-x: hidden;
+}
