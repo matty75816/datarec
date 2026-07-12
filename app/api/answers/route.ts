@@ -1,15 +1,21 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-export async function POST(request: Request) {
-  // On utilise des valeurs par défaut pour que le build ne plante pas
-  // Si les variables Vercel sont absentes, on aura des chaînes vides
-  const supabaseUrl = process.env.DB_URL_SUPABASE || "https://placeholder.co";
-  const supabaseKey = process.env.DB_KEY_SUPABASE || "placeholder-key";
+// NE PAS appeler createClient ici, en dehors de la fonction.
 
-  // Initialisation sécurisée
+export async function POST(request: Request) {
+  // Cette fonction ne sera appelée que lors d'une vraie requête HTTP, 
+  // jamais au moment du build.
+  
+  const supabaseUrl = process.env.DB_URL_SUPABASE;
+  const supabaseKey = process.env.DB_KEY_SUPABASE;
+
+  if (!supabaseUrl || !supabaseKey) {
+     return NextResponse.json({ error: "Variables manquantes" }, { status: 500 });
+  }
+
   const supabase = createClient(supabaseUrl, supabaseKey);
   
-  // Reste de ta logique...
+  // ... reste de ta logique ...
   return NextResponse.json({ success: true });
 }
