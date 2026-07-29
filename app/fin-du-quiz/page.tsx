@@ -1,51 +1,78 @@
-"use client";
-
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { QRCodeSVG } from 'qrcode.react';
-import confetti from 'canvas-confetti';
+'use client';
+import Link from 'next/link';
+import { useState } from 'react';
 
 export default function FinDuQuiz() {
-  const router = useRouter();
-  const siteUrl = "https://ton-site.com"; // Remplace par ton URL réelle
-  const shareText = "Viens faire ce super quiz :";
+  const [copied, setCopied] = useState(false);
+  const [rating, setRating] = useState<number | null>(null);
 
-  // Déclenchement des confettis au chargement
-  useEffect(() => {
-    confetti({
-      particleCount: 150,
-      spread: 70,
-      origin: { y: 0.6 }
-    });
-  }, []);
-
-  const copyToClipboard = () => {
-    navigator.clipboard.writeText(siteUrl);
-    alert("Lien copié dans le presse-papier !");
+  const handleShare = () => {
+    navigator.clipboard.writeText(window.location.origin);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 3000);
   };
 
   return (
-    <main className="min-h-screen bg-[#05050a] text-white flex flex-col items-center justify-center p-8 text-center">
-      <h1 className="text-2xl font-bold mb-6">Merci pour votre temps !</h1>
-      <p className="text-gray-400 mb-8">Pensez à partager avec vos amis.</p>
+    <div className="min-h-screen bg-[#0b0f19] text-white flex flex-col items-center justify-center px-4 py-12">
+      <div className="max-w-md w-full bg-gray-900/80 backdrop-blur-xl border border-gray-800/80 rounded-3xl p-8 shadow-2xl shadow-purple-950/40 text-center space-y-6">
+        
+        {/* Badge de succès */}
+        <div className="relative w-20 h-20 mx-auto flex items-center justify-center">
+          <div className="absolute inset-0 rounded-full bg-emerald-500/20 animate-ping"></div>
+          <div className="relative w-20 h-20 rounded-full bg-gradient-to-tr from-emerald-600 to-teal-400 flex items-center justify-center text-3xl shadow-lg shadow-emerald-500/30">
+            ✓
+          </div>
+        </div>
 
-      {/* QR Code */}
-      <div className="bg-white p-2 rounded-lg mb-8 shadow-[0_0_20px_rgba(255,255,255,0.1)]">
-        <QRCodeSVG value={siteUrl} size={150} />
+        <div className="space-y-2">
+          <h1 className="text-2xl font-extrabold tracking-tight">
+            Merci pour votre contribution ! 🎉
+          </h1>
+          <p className="text-sm text-gray-400 leading-relaxed">
+            Vos réponses sont enregistrées et resteront strictement anonymes. Vous avez aidé cette étude à être plus complète.
+          </p>
+        </div>
+
+        {/* Notez cette expérience */}
+        <div className="pt-2 border-t border-gray-800/80">
+          <p className="text-xs text-gray-400 mb-3">Notez cette expérience</p>
+          <div className="flex justify-center space-x-2">
+            {[1, 2, 3, 4, 5].map((star) => (
+              <button
+                key={star}
+                onClick={() => setRating(star)}
+                className={`text-2xl transition transform hover:scale-110 ${
+                  rating && star <= rating ? 'text-yellow-400' : 'text-gray-600'
+                }`}
+              >
+                ★
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Bouton de partage */}
+        <div className="space-y-2 pt-2">
+          <button
+            onClick={handleShare}
+            className="w-full py-3.5 px-6 rounded-xl font-bold text-white bg-gradient-to-r from-purple-600 via-pink-600 to-purple-700 hover:opacity-95 transition shadow-lg shadow-purple-600/30 flex items-center justify-center space-x-2 cursor-pointer"
+          >
+            <span>{copied ? 'Lien copié !' : 'Partagez le lien'}</span>
+            <span>🔗</span>
+          </button>
+        </div>
+
+        {/* Retour à l'accueil */}
+        <div>
+          <Link
+            href="/"
+            className="text-xs text-gray-500 hover:text-gray-300 transition underline underline-offset-4"
+          >
+            Retourner à l'accueil
+          </Link>
+        </div>
+
       </div>
-
-      {/* Réseaux Sociaux */}
-      <div className="grid grid-cols-2 gap-4 w-full max-w-sm mb-8">
-        <a href={`https://wa.me/?text=${encodeURIComponent(shareText + " " + siteUrl)}`} target="_blank" className="bg-green-600 p-3 rounded-lg font-bold hover:bg-green-700 transition">WhatsApp</a>
-        <a href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(siteUrl)}`} target="_blank" className="bg-blue-800 p-3 rounded-lg font-bold hover:bg-blue-900 transition">Facebook</a>
-        <a href={`https://www.instagram.com/?url=${encodeURIComponent(siteUrl)}`} target="_blank" className="bg-pink-600 p-3 rounded-lg font-bold hover:bg-pink-700 transition">Instagram</a>
-        <a href={`https://snapchat.com/scan?attachmentUrl=${encodeURIComponent(siteUrl)}`} target="_blank" className="bg-yellow-400 text-black p-3 rounded-lg font-bold hover:bg-yellow-500 transition">Snapchat</a>
-        <button onClick={copyToClipboard} className="col-span-2 bg-gray-700 p-3 rounded-lg font-bold hover:bg-gray-600 transition">Copier le lien</button>
-      </div>
-
-      <button onClick={() => router.push("/quiz")} className="text-blue-400 hover:text-blue-300 underline transition">
-        Recommencer le quiz
-      </button>
-    </main>
+    </div>
   );
 }
