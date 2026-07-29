@@ -14,7 +14,7 @@ export default function FinDuQuiz() {
 
   return (
     <div className="min-h-screen bg-[#0b0f19] text-white flex flex-col items-center justify-center px-4 py-12">
-      <div className="max-w-md w-full bg-gray-900/80 backdrop-blur-xl border border-gray-800/80 rounded-3xl p-8 shadow-2xl shadow-purple-950/40 text-center space-y-6">
+      <div className="max-w-md w-full bg-gray-900/85 backdrop-blur-xl border border-gray-800/80 rounded-3xl p-8 shadow-2xl shadow-purple-950/40 text-center space-y-6">
         
         {/* Badge de succès */}
         <div className="relative w-20 h-20 mx-auto flex items-center justify-center">
@@ -29,7 +29,7 @@ export default function FinDuQuiz() {
             Merci pour votre contribution ! 🎉
           </h1>
           <p className="text-sm text-gray-400 leading-relaxed">
-            Vos réponses sont enregistrées et resteront strictement anonymes. Vous avez aidé cette étude à être plus complète.
+            Vos réponses ont bien été enregistrées et resteront strictement anonymes. Vous avez aidé cette étude à être plus complète.
           </p>
         </div>
 
@@ -41,7 +41,7 @@ export default function FinDuQuiz() {
               <button
                 key={star}
                 onClick={() => setRating(star)}
-                className={`text-2xl transition transform hover:scale-110 ${
+                className={`text-2xl transition transform hover:scale-110 cursor-pointer ${
                   rating && star <= rating ? 'text-yellow-400' : 'text-gray-600'
                 }`}
               >
