@@ -6,10 +6,32 @@ export default function FinDuQuiz() {
   const [copied, setCopied] = useState(false);
   const [rating, setRating] = useState<number | null>(null);
 
-  const handleShare = () => {
-    navigator.clipboard.writeText(window.location.origin);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 3000);
+  const handleShare = async () => {
+    const shareData = {
+      title: 'Étude 2026 - Sexualité & Perceptions',
+      text: 'Participez à cette étude confidentielle et anonyme !',
+      url: window.location.origin,
+    };
+
+    // Si le navigateur supporte le partage natif (très pratique sur mobile)
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+        return;
+      } catch (err) {
+        // L'utilisateur a annulé ou le partage a échoué, on bascule sur la copie du lien
+      }
+    }
+
+    // Solution de secours : Copie directe dans le presse-papier
+    try {
+      await navigator.clipboard.writeText(window.location.origin);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 3000);
+    } catch (err) {
+      // Fallback ultime si le presse-papier est bloqué
+      prompt('Copiez ce lien :', window.location.origin);
+    }
   };
 
   return (
@@ -51,13 +73,13 @@ export default function FinDuQuiz() {
           </div>
         </div>
 
-        {/* Bouton de partage */}
+        {/* Bouton de partage intelligent */}
         <div className="space-y-2 pt-2">
           <button
             onClick={handleShare}
             className="w-full py-3.5 px-6 rounded-xl font-bold text-white bg-gradient-to-r from-purple-600 via-pink-600 to-purple-700 hover:opacity-95 transition shadow-lg shadow-purple-600/30 flex items-center justify-center space-x-2 cursor-pointer"
           >
-            <span>{copied ? 'Lien copié !' : 'Partagez le lien'}</span>
+            <span>{copied ? 'Lien copié dans le presse-papier !' : 'Partager ou copier le lien'}</span>
             <span>🔗</span>
           </button>
         </div>
