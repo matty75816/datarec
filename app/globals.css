@@ -1,0 +1,24 @@
+@import "tailwindcss";
+
+@theme {
+  /* Vos couleurs personnalisées */
+  --color-bg-dark: #0a0a12;
+  --color-accent-purple: #9333ea;
+  --color-accent-pink: #d946ef;
+}
+
+/* Réinitialisation de base pour garantir que le design Tailwind s'affiche correctement */
+@layer base {
+  body {
+    @apply bg-bg-dark text-white antialiased;
+    margin: 0;
+    padding: 0;
+  }
+}
+
+/* Utilitaires pour forcer le rendu si nécessaire */
+@layer components {
+  .glass-card {
+    @apply bg-white/5 border border-white/10 backdrop-blur-xl shadow-2xl;
+  }
+}

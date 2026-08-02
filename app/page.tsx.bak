@@ -1,0 +1,56 @@
+'use client'; // Indispensable pour utiliser des hooks
+
+import { useRouter } from 'next/navigation';
+
+export default function Home() {
+  const router = useRouter();
+
+  return (
+    <main className="min-h-screen bg-[#0a0a12] text-white flex flex-col items-center justify-center p-6 text-center">
+      <h1 className="text-4xl font-extrabold mb-4">
+        Étude 2026 <br/>
+        <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-500">
+          Sexualité & Perceptions
+        </span>
+      </h1>
+      
+      <div className="w-full max-w-sm h-64 bg-gray-900 rounded-3xl mb-8 border border-white/5 shadow-2xl" />
+
+      <button 
+  onClick={() => window.location.href = '/quiz'}
+  className="relative z-[9999] isolate flex items-center justify-center w-full max-w-xs py-4 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl font-bold hover:scale-105 transition-all shadow-lg shadow-purple-500/20 mb-6"
+  style={{ pointerEvents: 'auto' }}
+>
+  Commencer l'étude →
+</button>
+<div 
+  style={{ 
+    position: 'fixed', 
+    bottom: '20px', 
+    left: '50%', 
+    transform: 'translateX(-50%)', 
+    zIndex: 9999,
+    width: '100%',
+    textAlign: 'center'
+  }}
+>
+  <button 
+    onClick={() => window.location.href = '/quiz'}
+    style={{
+      padding: '20px 40px',
+      background: 'red', // Couleur rouge vif pour le test
+      color: 'white',
+      borderRadius: '20px',
+      border: 'none',
+      cursor: 'pointer',
+      fontSize: '20px',
+      fontWeight: 'bold',
+      pointerEvents: 'auto'
+    }}
+  >
+    CLIQUER ICI POUR TESTER
+  </button>
+</div>
+    </main>
+  );
+}
