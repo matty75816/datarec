@@ -694,6 +694,11 @@ export default function QuizPage() {
       type: "text"
     },
     {
+      id: 106,
+      title: "Avec lequel de vos partenaires si tu pouvais tu feras un film ou une Sextape et quel sera son intitulé ? (indice ou nom)",
+      type: "text"
+    },
+    {
       id: 107,
       title: "Veuillez noter ce sondage merci",
       type: "radio",

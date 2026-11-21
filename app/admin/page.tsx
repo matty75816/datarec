@@ -27,11 +27,18 @@ export default function AdminPage() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const url = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/quiz_submissions?select=*&order=created_at.desc`;
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.DB_URL_SUPABASE;
+        const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.DB_KEY_SUPABASE;
+
+        if (!supabaseUrl || !supabaseKey) {
+          throw new Error('Variables d\'environnement Supabase manquantes.');
+        }
+
+        const url = `${supabaseUrl}/rest/v1/quiz_submissions?select=*&order=created_at.desc`;
         const response = await fetch(url, {
           headers: {
-            'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-            'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!}`,
+            'apikey': supabaseKey,
+            'Authorization': `Bearer ${supabaseKey}`,
           },
         });
 
@@ -286,7 +293,6 @@ export default function AdminPage() {
         )}
       </div>
 
-      {/* Modale affichant clairement le texte de la question et sa réponse */}
       {selectedSubmission && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-2xl max-w-3xl w-full p-6 space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto">
@@ -304,7 +310,6 @@ export default function AdminPage() {
                 <div className="bg-gray-50 p-4 rounded-xl border space-y-3 max-h-[50vh] overflow-y-auto">
                   {typeof selectedSubmission.answers === 'object' && selectedSubmission.answers !== null ? (
                     Object.entries(selectedSubmission.answers).map(([key, value]) => {
-                      // Récupère le texte de la question depuis le dictionnaire ou l'objet stocké
                       let questionText = ALL_QUESTIONS[key] || (typeof value === 'object' && value !== null && (value as any).question ? (value as any).question : `Question ${key}`);
                       let answerText = typeof value === 'object' && value !== null && (value as any).answer !== undefined ? (value as any).answer : value;
 
