@@ -5,14 +5,25 @@ import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend, BarChart, Ba
 
 const COLORS = ['#06b6d4', '#8b5cf6', '#ec4899', '#3b82f6', '#10b981'];
 
-// 📝 Mappez ici vos 108 questions (la clé correspond à l'identifiant stocké dans la base, ex: "1", "2"... ou "q1", "q2")
 const ALL_QUESTIONS: { [key: string]: string } = {
-  "1": "Quel est votre code utilisateur ?",
-  "2": "Quel est votre sexe / genre ?",
-  "3": "Votre question 3...",
-  "4": "Votre question 4...",
-  "5": "Votre question 5...",
-  // ... Ajoutez ou complétez vos questions jusqu'à 108 ici
+  "2": "Sexe / genre",
+  "3": "Nationalité",
+  "4": "Ville de résidence",
+  "5": "Prénom ou pseudonyme",
+  "6": "Âge",
+  "7": "Orientation sexuelle",
+  "8": "Situation",
+  // Ajoute ici les autres titres si tu veux : "9": "Avez-vous déjà eu des rapports ?", ...
+};
+
+// Gère les deux formats : { answers: {...}, otherInputs, conditionalInputs } ou format à plat
+const getAnswers = (sub: any) => sub?.answers?.answers ?? sub?.answers;
+const getOther = (sub: any) => sub?.answers?.otherInputs ?? {};
+const getConditional = (sub: any) => sub?.answers?.conditionalInputs ?? {};
+
+const sortKeys = (a: string, b: string) => {
+  const na = Number(a), nb = Number(b);
+  return isNaN(na) || isNaN(nb) ? a.localeCompare(b) : na - nb;
 };
 
 export default function AdminPage() {
@@ -27,23 +38,16 @@ export default function AdminPage() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.DB_URL_SUPABASE;
-        const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.DB_KEY_SUPABASE;
-
-        if (!supabaseUrl || !supabaseKey) {
-          throw new Error('Variables d\'environnement Supabase manquantes.');
-        }
-
-        const url = `${supabaseUrl}/rest/v1/quiz_submissions?select=*&order=created_at.desc`;
-        const response = await fetch(url, {
-          headers: {
-            'apikey': supabaseKey,
-            'Authorization': `Bearer ${supabaseKey}`,
-          },
+        const password = window.prompt('Mot de passe admin :') || '';
+        const response = await fetch('/api/admin/submissions', {
+          headers: { 'x-admin-password': password },
         });
 
+        if (response.status === 401) {
+          throw new Error('Mot de passe incorrect. Recharge la page pour réessayer.');
+        }
         if (!response.ok) {
-          throw new Error('Erreur lors du chargement des données depuis Supabase');
+          throw new Error('Erreur lors du chargement des données.');
         }
 
         const data = await response.json();
@@ -60,42 +64,42 @@ export default function AdminPage() {
 
   const filteredSubmissions = useMemo(() => {
     return submissions.filter((sub) => {
-      const searchString = `${sub.id} ${sub.created_at} ${JSON.stringify(sub.answers)}`.toLowerCase();
+      const searchString = `${sub.id} ${sub.created_at} ${JSON.stringify(getAnswers(sub))}`.toLowerCase();
       return searchString.includes(searchTerm.toLowerCase());
     });
   }, [submissions, searchTerm]);
 
   const statsDateData = useMemo(() => {
     const counts: { [key: string]: number } = {};
-    submissions.forEach(sub => {
+    submissions.forEach((sub) => {
       if (!sub.created_at) return;
       const date = sub.created_at.split('T')[0];
       counts[date] = (counts[date] || 0) + 1;
     });
-    return Object.keys(counts).map(date => ({ name: date, value: counts[date] }));
+    return Object.keys(counts).map((date) => ({ name: date, value: counts[date] }));
   }, [submissions]);
 
-  // Statistiques par Sexe / Genre (cherche la question "2" ou contenant genre/sexe)
   const statsGenderData = useMemo(() => {
     const counts: { [key: string]: number } = {};
-    submissions.forEach(sub => {
-      if (!sub.answers || typeof sub.answers !== 'object') return;
-      
-      const genderKey = Object.keys(sub.answers).find(k => {
+    submissions.forEach((sub) => {
+      const a = getAnswers(sub);
+      if (!a || typeof a !== 'object') return;
+
+      const genderKey = Object.keys(a).find((k) => {
         const lowerK = k.toLowerCase();
         return lowerK.includes('sexe') || lowerK.includes('genre') || lowerK.includes('gender') || k === '2';
       });
 
       if (genderKey) {
-        const val = sub.answers[genderKey];
-        const cleanVal = typeof val === 'object' && val !== null ? (val.answer || val.value || JSON.stringify(val)) : String(val).trim();
-        if (cleanVal) {
-          counts[cleanVal] = (counts[cleanVal] || 0) + 1;
-        }
+        const val = a[genderKey];
+        const cleanVal =
+          typeof val === 'object' && val !== null
+            ? val.answer || val.value || JSON.stringify(val)
+            : String(val).trim();
+        if (cleanVal) counts[cleanVal] = (counts[cleanVal] || 0) + 1;
       }
     });
-
-    return Object.keys(counts).map(key => ({ name: key, count: counts[key] }));
+    return Object.keys(counts).map((key) => ({ name: key, count: counts[key] }));
   }, [submissions]);
 
   const totalPages = Math.ceil(filteredSubmissions.length / itemsPerPage);
@@ -105,28 +109,27 @@ export default function AdminPage() {
   }, [filteredSubmissions, currentPage]);
 
   const exportJSON = () => {
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(submissions, null, 2));
-    const downloadAnchor = document.createElement('a');
-    downloadAnchor.setAttribute("href", dataStr);
-    downloadAnchor.setAttribute("download", `quiz_submissions_${new Date().toISOString().split('T')[0]}.json`);
-    document.body.appendChild(downloadAnchor);
-    downloadAnchor.click();
-    downloadAnchor.remove();
+    const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(submissions, null, 2));
+    const a = document.createElement('a');
+    a.setAttribute('href', dataStr);
+    a.setAttribute('download', `quiz_submissions_${new Date().toISOString().split('T')[0]}.json`);
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
   };
 
   const exportCSV = () => {
     if (submissions.length === 0) return;
     const headers = ['ID', 'Date', 'Answers'];
-    const rows = submissions.map(sub => [
+    const rows = submissions.map((sub) => [
       sub.id,
       sub.created_at,
-      `"${JSON.stringify(sub.answers).replace(/"/g, '""')}"`
+      `"${JSON.stringify(sub.answers).replace(/"/g, '""')}"`,
     ]);
-
-    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
-    const encodedUri = encodeURI(csvContent);
+    const csvContent =
+      'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((e) => e.join(','))].join('\n');
     const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
+    link.setAttribute('href', encodeURI(csvContent));
     link.setAttribute('download', `quiz_submissions_${new Date().toISOString().split('T')[0]}.csv`);
     document.body.appendChild(link);
     link.click();
@@ -136,6 +139,10 @@ export default function AdminPage() {
   if (loading) {
     return <div className="p-8 text-center text-gray-500">Chargement du tableau de bord...</div>;
   }
+
+  const selectedAnswers = selectedSubmission ? getAnswers(selectedSubmission) : null;
+  const selectedOther = selectedSubmission ? getOther(selectedSubmission) : {};
+  const selectedConditional = selectedSubmission ? getConditional(selectedSubmission) : {};
 
   return (
     <div className="p-8 max-w-7xl mx-auto space-y-6">
@@ -154,23 +161,18 @@ export default function AdminPage() {
         </div>
       </div>
 
+      {errorMessage && (
+        <div className="p-4 bg-red-100 text-red-700 rounded-md text-sm">{errorMessage}</div>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {submissions.length > 0 && (
           <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 space-y-4">
-            <h2 className="text-lg font-semibold text-gray-800">Répartition des soumissions (Donut)</h2>
+            <h2 className="text-lg font-semibold text-gray-800">Soumissions par jour</h2>
             <div className="h-64 w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
-                  <Pie
-                    data={statsDateData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={90}
-                    paddingAngle={5}
-                    dataKey="value"
-                    label
-                  >
+                  <Pie data={statsDateData} cx="50%" cy="50%" innerRadius={60} outerRadius={90} paddingAngle={5} dataKey="value" label>
                     {statsDateData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
@@ -209,12 +211,6 @@ export default function AdminPage() {
         )}
       </div>
 
-      {errorMessage && (
-        <div className="p-4 bg-red-100 text-red-700 rounded-md text-sm">
-          {errorMessage}
-        </div>
-      )}
-
       <div className="flex items-center justify-between gap-4 bg-white p-4 rounded-xl shadow-sm border border-gray-100">
         <input
           type="text"
@@ -223,9 +219,7 @@ export default function AdminPage() {
           onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
           className="w-full md:w-96 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm text-black"
         />
-        <div className="text-sm text-gray-500">
-          Résultats : {filteredSubmissions.length}
-        </div>
+        <div className="text-sm text-gray-500">Résultats : {filteredSubmissions.length}</div>
       </div>
 
       <div className="bg-white shadow-sm rounded-xl border border-gray-200 overflow-hidden">
@@ -247,7 +241,7 @@ export default function AdminPage() {
                     {new Date(sub.created_at).toLocaleString('fr-FR')}
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
-                    {JSON.stringify(sub.answers)}
+                    {JSON.stringify(getAnswers(sub))}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <button
@@ -273,17 +267,15 @@ export default function AdminPage() {
         {totalPages > 1 && (
           <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex items-center justify-between">
             <button
-              onClick={() => setCurrentPage(p => Math.max(p - 1, 1))}
+              onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
               disabled={currentPage === 1}
               className="px-3 py-1 border rounded bg-white text-sm disabled:opacity-50 text-black"
             >
               Précédent
             </button>
-            <span className="text-sm text-gray-600">
-              Page {currentPage} sur {totalPages}
-            </span>
+            <span className="text-sm text-gray-600">Page {currentPage} sur {totalPages}</span>
             <button
-              onClick={() => setCurrentPage(p => Math.min(p + 1, totalPages))}
+              onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
               disabled={currentPage === totalPages}
               className="px-3 py-1 border rounded bg-white text-sm disabled:opacity-50 text-black"
             >
@@ -308,24 +300,37 @@ export default function AdminPage() {
               <div>
                 <span className="font-semibold text-gray-700 mb-2 block">Toutes les réponses :</span>
                 <div className="bg-gray-50 p-4 rounded-xl border space-y-3 max-h-[50vh] overflow-y-auto">
-                  {typeof selectedSubmission.answers === 'object' && selectedSubmission.answers !== null ? (
-                    Object.entries(selectedSubmission.answers).map(([key, value]) => {
-                      let questionText = ALL_QUESTIONS[key] || (typeof value === 'object' && value !== null && (value as any).question ? (value as any).question : `Question ${key}`);
-                      let answerText = typeof value === 'object' && value !== null && (value as any).answer !== undefined ? (value as any).answer : value;
+                  {typeof selectedAnswers === 'object' && selectedAnswers !== null ? (
+                    Object.entries(selectedAnswers)
+                      .sort(([a], [b]) => sortKeys(a, b))
+                      .map(([key, value]) => {
+                        const questionText = ALL_QUESTIONS[key] || `Question ${key}`;
+                        const answerText =
+                          typeof value === 'object' && value !== null && (value as any).answer !== undefined
+                            ? (value as any).answer
+                            : value;
+                        const other = selectedOther[key];
+                        const conditional = selectedConditional[key];
 
-                      return (
-                        <div key={key} className="border-b border-gray-200 pb-3 last:border-0 last:pb-0">
-                          <span className="text-xs font-bold text-indigo-600 uppercase tracking-wide block mb-1">
-                            {questionText}
-                          </span>
-                          <span className="text-sm font-semibold text-gray-900 bg-white px-3 py-1.5 rounded border border-gray-100 block shadow-2xs">
-                            {typeof answerText === 'object' ? JSON.stringify(answerText) : String(answerText)}
-                          </span>
-                        </div>
-                      );
-                    })
+                        return (
+                          <div key={key} className="border-b border-gray-200 pb-3 last:border-0 last:pb-0">
+                            <span className="text-xs font-bold text-indigo-600 uppercase tracking-wide block mb-1">
+                              {questionText}
+                            </span>
+                            <span className="text-sm font-semibold text-gray-900 bg-white px-3 py-1.5 rounded border border-gray-100 block">
+                              {typeof answerText === 'object' ? JSON.stringify(answerText) : String(answerText)}
+                            </span>
+                            {other && (
+                              <span className="text-xs text-purple-700 block mt-1">Précision (Autre) : {other}</span>
+                            )}
+                            {conditional && (
+                              <span className="text-xs text-blue-700 block mt-1">Précision : {conditional}</span>
+                            )}
+                          </div>
+                        );
+                      })
                   ) : (
-                    <p className="text-gray-600">{String(selectedSubmission.answers)}</p>
+                    <p className="text-gray-600">{String(selectedAnswers)}</p>
                   )}
                 </div>
               </div>
